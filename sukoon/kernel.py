@@ -21,9 +21,14 @@ class SukoonKernel(Kernel):
                    allow_stdin=False):
         try:
             tree = ast.parse(code)
-            lines = []
-            pretty_print(tree, lines)
-            result = '\n'.join(lines)
+            if isinstance(tree, ast.Module) and isinstance(tree.body[0], ast.Assign):
+                name = tree.body[0].targets[0].id
+                value = ast.literal_eval(tree.body[0].value)
+                result = f'{name} = {value}\n'
+            else:
+                lines = []
+                pretty_print(tree, lines)
+                result = '\n'.join(lines)
         except Exception as e:
             result = e
 

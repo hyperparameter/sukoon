@@ -21,7 +21,6 @@ def run_single(test, expected):
     kernel.send_response = send_response
     kernel.do_execute(test, False)
 
-    print(send_response.call_args[0][2]['text'])
-    #
-    # print(test)
-    # print(expected)
+    response = send_response.call_args[0][2]['text']
+    print(response)
+    assert expected == response
