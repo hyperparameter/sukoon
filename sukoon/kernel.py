@@ -17,13 +17,20 @@ class SukoonKernel(Kernel):
     responses = [None, "1100", 3]
     index = 0
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.namespace = {}
+        self.locals = {}
+
     def do_execute(self, code, silent, store_history=True, user_expressions=None,
                    allow_stdin=False):
         try:
             tree = ast.parse(code)
             if isinstance(tree, ast.Module) and isinstance(tree.body[0], ast.Assign):
                 name = tree.body[0].targets[0].id
-                value = ast.literal_eval(tree.body[0].value)
+                exec(compile(tree, filename="<ast>", mode='exec'), self.namespace, self.locals)
+                value = self.locals[name]
+                print("LOCALS", self.locals)
                 result = f'{name} = {value}\n'
             else:
                 lines = []
