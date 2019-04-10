@@ -59,7 +59,14 @@ def get_assign_ids(tree):
     if isinstance(tree, ast.Module):
         for node in tree.body:
             if isinstance(node, ast.Assign):
-                ids.append(node.targets[0].id)
+                target = node.targets[0]
+                if isinstance(target, ast.Name):
+                    ids.append(target.id)
+                elif isinstance(target, ast.Tuple):
+                    for child in target.elts:
+                        if isinstance(child, ast.Name):
+                            ids.append(child.id)
+
     return ids
 
 

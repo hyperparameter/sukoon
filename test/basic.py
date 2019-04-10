@@ -10,3 +10,11 @@ y = 4
 z = 5
 ## y = 4
 ## z = 5
+
+import math
+x = math.sqrt(4.0)
+## x = 2.0
+
+x, y = 6, 7
+## x = 6
+## y = 7
