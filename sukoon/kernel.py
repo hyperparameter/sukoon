@@ -24,20 +24,20 @@ class SukoonKernel(Kernel):
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None,
                    allow_stdin=False):
+        tree = ast.parse(code)
+        debug_print(tree)
+        transform(tree)
         try:
-            tree = ast.parse(code)
-            assign_ids = get_assign_ids(tree)
             exec(compile(tree, filename="<ast>", mode='exec'), self.namespace, self.locals)
+        except Exception as e:
+            result = e
+        else:
             result = ''
+            assign_ids = get_assign_ids(tree)
             for name in assign_ids:
                 value = self.locals[name]
                 result += f'{name} = {value}\n'
-            # else:
-            #     lines = []
-            #     pretty_print(tree, lines)
-            #     result = '\n'.join(lines)
-        except Exception as e:
-            result = e
+
 
         if not silent:
             # stream_content = {'name': 'stdout', 'text': self.responses[self.index % len(self.responses)]}
@@ -54,6 +54,35 @@ class SukoonKernel(Kernel):
             }
 
 
+def transform(tree):
+    if isinstance(tree, ast.Module):
+        for node in tree.body:
+            if isinstance(node, ast.FunctionDef):
+                function_name = node.name
+                variable_name = None
+                for child in node.body:
+                    if isinstance(child, ast.Return):
+                        if isinstance(child.value, ast.Name):
+                            variable_name = child.value.id
+                if variable_name is None:
+                    variable_name = get_new_variable_name()
+                tree.body.append(ast.Assign(targets=[ast.Name(id=variable_name, ctx=ast.Store())],
+                                            value=ast.Call(func=ast.Name(id=function_name, ctx=ast.Load()),
+                                                           args=[], keywords=[])))
+    ast.fix_missing_locations(tree)
+
+
+_variable_count = 0
+
+
+def get_new_variable_name():
+    global _variable_count
+    _variable_count += 1
+    return f'_{_variable_count}'
+
+
+
+
 def get_assign_ids(tree):
     ids = []
     if isinstance(tree, ast.Module):
@@ -68,6 +97,12 @@ def get_assign_ids(tree):
                             ids.append(child.id)
 
     return ids
+
+
+def debug_print(tree):
+    lines = []
+    pretty_print(tree, lines)
+    print('\n' + '\n'.join(lines))
 
 
 def pretty_print(tree: ast.AST, result=None, depth=0):

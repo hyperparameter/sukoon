@@ -18,3 +18,8 @@ x = math.sqrt(4.0)
 x, y = 6, 7
 ## x = 6
 ## y = 7
+
+def f():
+    value = 345
+    return value
+## value = 345
