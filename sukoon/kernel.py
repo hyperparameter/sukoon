@@ -26,16 +26,16 @@ class SukoonKernel(Kernel):
                    allow_stdin=False):
         try:
             tree = ast.parse(code)
-            if isinstance(tree, ast.Module) and isinstance(tree.body[0], ast.Assign):
-                name = tree.body[0].targets[0].id
-                exec(compile(tree, filename="<ast>", mode='exec'), self.namespace, self.locals)
+            assign_ids = get_assign_ids(tree)
+            exec(compile(tree, filename="<ast>", mode='exec'), self.namespace, self.locals)
+            result = ''
+            for name in assign_ids:
                 value = self.locals[name]
-                print("LOCALS", self.locals)
-                result = f'{name} = {value}\n'
-            else:
-                lines = []
-                pretty_print(tree, lines)
-                result = '\n'.join(lines)
+                result += f'{name} = {value}\n'
+            # else:
+            #     lines = []
+            #     pretty_print(tree, lines)
+            #     result = '\n'.join(lines)
         except Exception as e:
             result = e
 
@@ -52,6 +52,15 @@ class SukoonKernel(Kernel):
             'payload': [],
             'user_expressions': {},
             }
+
+
+def get_assign_ids(tree):
+    ids = []
+    if isinstance(tree, ast.Module):
+        for node in tree.body:
+            if isinstance(node, ast.Assign):
+                ids.append(node.targets[0].id)
+    return ids
 
 
 def pretty_print(tree: ast.AST, result=None, depth=0):
