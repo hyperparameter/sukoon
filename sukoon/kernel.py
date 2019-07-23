@@ -25,7 +25,7 @@ class SukoonKernel(Kernel):
     def do_execute(self, code, silent, store_history=True, user_expressions=None,
                    allow_stdin=False):
         tree = ast.parse(code)
-        debug_print(tree)
+        # debug_print(tree)
         transform(tree)
         try:
             exec(compile(tree, filename="<ast>", mode='exec'), self.namespace, self.locals)
@@ -58,18 +58,25 @@ def transform(tree):
     if isinstance(tree, ast.Module):
         for node in tree.body:
             if isinstance(node, ast.FunctionDef):
-                function_name = node.name
-                variable_name = None
-                for child in node.body:
-                    if isinstance(child, ast.Return):
-                        if isinstance(child.value, ast.Name):
-                            variable_name = child.value.id
-                if variable_name is None:
-                    variable_name = get_new_variable_name()
-                tree.body.append(ast.Assign(targets=[ast.Name(id=variable_name, ctx=ast.Store())],
-                                            value=ast.Call(func=ast.Name(id=function_name, ctx=ast.Load()),
-                                                           args=[], keywords=[])))
+                args = [arg.arg for arg in node.args.args]
+                assign = get_function_call(node)
+                tree.body.append(assign)
     ast.fix_missing_locations(tree)
+
+
+def get_function_call(function_node: ast.FunctionDef):
+    function_name = function_node.name
+    variable_name = None
+    for child in function_node.body:
+        if isinstance(child, ast.Return):
+            if isinstance(child.value, ast.Name):
+                variable_name = child.value.id
+    if variable_name is None:
+        variable_name = get_new_variable_name()
+    return ast.Assign(targets=[ast.Name(id=variable_name, ctx=ast.Store())],
+                      value=ast.Call(func=ast.Name(id=function_name, ctx=ast.Load()),
+                                     args=[],
+                                     keywords=[]))
 
 
 _variable_count = 0

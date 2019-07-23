@@ -23,3 +23,12 @@ def f():
     value = 345
     return value
 ## value = 345
+
+
+x = 3
+def f(x):
+    value = x + 1
+    return value
+value = f(x)
+## x = 3
+## value = 4
